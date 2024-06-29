@@ -1,0 +1,133 @@
+using System;
+using System.Drawing.Imaging;
+using System.IO;
+using Microsoft.Office.Interop.Excel;
+using Microsoft.Office.Interop.Word;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using Spire.Xls;
+using Aspose;
+using Aspose.Words;
+using Aspose.Pdf;
+using System.Windows.Forms;
+using Aspose.Words.Saving;
+using System.Web;
+using Aspose.Drawing;
+using Aspose.Imaging;
+using Aspose.Imaging.ImageOptions;
+using static System.Windows.Forms.Design.AxImporter;
+using Aspose.Pdf.Operators;
+
+namespace DocumentConverter
+{
+    public partial class Form1 : Form
+    {
+        private string dosyaYolu = "";//we defined a variable to document adress for the chosen document in string type and give the name dosyaYolu
+        public Form1()
+        {
+            InitializeComponent();
+            this.AllowDrop = true;//we make the system ready for loading documents method
+        }
+
+        
+
+        private void btndocchoose_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog file = new OpenFileDialog();//we defined a new OpenFileDialog and give the name file;
+            file.Filter = "Excel Dosyaları|*.xlsx|Word Dosyaları|*.docx|PDF Dosyaları|*.pdf|JPEG Dosyaları|*.jpeg|JPG Dosyaları|*.jpg|PNG Dosyaları|*.png";//we filter the document types 
+            file.Title = "Dosya Seç";//we choose the title of the dialog page
+            if (file.ShowDialog() == DialogResult.OK)
+            {
+                dosyaYolu = file.FileName;//we record the document adress the document that we have chosen to the dosyaYolu
+                label2.Text = "Dosya adı: " + Path.GetFileName(dosyaYolu);//we show the files name that we have chosen
+            }
+            //file.ShowDialog();//we open the documents the document part in the computer.
+        }
+
+       // private string GetKayitYolu(string dosyaAdi, string kayitYolu)
+        //{
+
+        //}
+        private void btnconvertdownload_Click(object sender, EventArgs e)
+        {
+            string dosyauzantı = Path.GetExtension(dosyaYolu);//we take the file extention and defined to variable dosyauzantı in string type 
+            string yeniDosyaAdi = Path.GetFileNameWithoutExtension(dosyaYolu); // Dosya adını ve uzantısını ayırıyoruz
+            string kayitYolu; // Dönüştürülen dosyanın kaydedileceği yol
+
+            if (Path.GetExtension(dosyaYolu) == ".docx")
+            {
+                if (rdbuttonpdf.Checked)
+                {
+                    try
+                    {
+                        Aspose.Words.Document wordDoc = new Aspose.Words.Document(dosyaYolu);//download the document that user have chose to Aspose.Words.Document and give the name wordDoc
+                        kayitYolu = Path.Combine(Path.GetDirectoryName(dosyaYolu), yeniDosyaAdi + ".pdf");//make a file extension for pdf 
+                        wordDoc.Save(kayitYolu, Aspose.Words.SaveFormat.Pdf);//convert the word document to pdf 
+                        //MessageBox.Show("Yüklediğiniz Word dosyası başarılı bir şekilde PDF dosyasına dönüştürülmüştür!");
+                        //we hava converted the word document to pdf document 
+
+                        SaveFileDialog wordpdf = new SaveFileDialog();//we defined a SaveFileDialog and give the name wordpdf 
+                        wordpdf.Filter = "PDF Dosyası | *.pdf";//we filter the wordpdf 
+                        wordpdf.Title = "Dosyayı Kaydet";
+                        wordpdf.FileName = yeniDosyaAdi + ".pdf";//we defined the name of the pdf converted document 
+                        if (wordpdf.ShowDialog() == DialogResult.OK)
+                        {
+                            File.Copy(kayitYolu, wordpdf.FileName, true);//copy the pdf document to place that user chose 
+                            MessageBox.Show("Yüklediğiniz Word Dosyası başarılı bir şekilde PDF dosyasına dönüştürülmüş ve PDF olarak indirilmiştir.");
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        MessageBox.Show(ex.Message);
+                    }
+                }
+                //GetDirectoryName dosyanın konumunu verir
+
+                if (rdbuttonpng.Checked)
+                {
+                    Aspose.Words.Document word = new Aspose.Words.Document(dosyaYolu);//we load the specified word document into Aspose.Word.Document object and give the name word
+                   
+                    Aspose.Words.Saving.ImageSaveOptions wordpng = new Aspose.Words.Saving.ImageSaveOptions(Aspose.Words.SaveFormat.Png);//we use for record word document to png ImageSaveOptions
+                    for (int pageIndex = 0; pageIndex < word.PageCount; pageIndex++)
+                    {
+                        string pngDosyaAdi = $"{Path.GetFileNameWithoutExtension(dosyaYolu)}.png";
+                        string pngYolu = Path.Combine(Path.GetDirectoryName(dosyaYolu), pngDosyaAdi);
+                        word.Save(pngYolu, wordpng);//we record the word document as png document
+                    }
+                    
+                    
+                    SaveFileDialog wordtopng = new SaveFileDialog();//we defined a SaveFileDialog and give the name wordtopng
+                    wordtopng.Filter = "PNG Dosyası|*.png";
+                    wordtopng.Title = "PNG dosyası olarak kaydet";
+                    wordtopng.FileName = yeniDosyaAdi + ".png";
+                    if (wordtopng.ShowDialog() == DialogResult.OK)
+                    {
+                        string pngDosyaAdi = wordtopng.FileName;
+
+                        Aspose.Words.Document words = new Aspose.Words.Document(dosyaYolu);
+                        Aspose.Words.Saving.ImageSaveOptions wordpngs = new Aspose.Words.Saving.ImageSaveOptions(Aspose.Words.SaveFormat.Png);
+
+                        // Belgenin her bir sayfası PNG formatına dönüştürülerek kaydediliyor
+                        for (int pageIndex = 0; pageIndex < word.PageCount; pageIndex++)//we count the pages of the word document and save as png  
+                        {
+                            string pngYolu = Path.Combine(Path.GetDirectoryName(dosyaYolu), $"Page_{pageIndex + 1}.png");
+                            word.Save(pngYolu, wordpngs);
+                        }
+
+                        //recording is completed
+                        File.Copy(Path.Combine(Path.GetDirectoryName(dosyaYolu), $"{Path.GetFileNameWithoutExtension(dosyaYolu)}.png"), pngDosyaAdi, true);
+                        MessageBox.Show("Belge başarıyla PNG formatına dönüştürüldü ve kaydedildi!");
+                    }
+                }
+
+                if (rdbuttonjpg.Checked)//if the user button jpg checked 
+                {
+                    
+                }
+                
+            }
+        }
+
+        
+    }
+}
